@@ -14,11 +14,12 @@ public class Reservation {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private AppUser user;
 
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
+
 
 }

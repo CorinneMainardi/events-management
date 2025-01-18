@@ -1,6 +1,7 @@
 package it.epicode.U2J_W4_D5_PROJECT.auth;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,7 +24,7 @@ public class AuthController {
                 registerRequest.getPassword(),
                 Set.of(Role.ROLE_USER) // Assegna il ruolo di default
         );
-        return ResponseEntity.ok("Registrazione avvenuta con successo");
+        return ResponseEntity.status(HttpStatus.CREATED).body("Registrazione avvenuta con successo");
     }
 
     @PostMapping("/login")
@@ -32,6 +33,7 @@ public class AuthController {
                 loginRequest.getUsername(),
                 loginRequest.getPassword()
         );
-        return ResponseEntity.ok(new AuthResponse(token));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new AuthResponse(token));
+
     }
 }

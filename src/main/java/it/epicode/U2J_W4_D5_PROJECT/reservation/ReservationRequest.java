@@ -9,9 +9,9 @@ import lombok.Data;
 
 @Data
 public class ReservationRequest {
-    @NotNull
-    private AppUser user;
+    @NotNull(message = "the field 'user' cannot be null")
+    private Long userId;
 
-    @NotNull
-    private Event event;
+    @NotNull(message = "the field 'event' cannot be null")
+    private Long eventId;
 }
