@@ -2,16 +2,19 @@ package it.epicode.U2J_W4_D5_PROJECT.event;
 
 
 import it.epicode.U2J_W4_D5_PROJECT.auth.AppUser;
+import it.epicode.U2J_W4_D5_PROJECT.auth.Role;
 import it.epicode.U2J_W4_D5_PROJECT.exceptions.UploadException;
 import it.epicode.U2J_W4_D5_PROJECT.reservation.ReservationRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -33,26 +36,33 @@ public class EventSvc {
         }
         return eventRepository.findById(id).get();
     }
-    public Event createEvent(@Valid EventRequest eventRequest,  AppUser appUser ) {
+    public Event createEvent(@Valid EventRequest eventRequest, @AuthenticationPrincipal AppUser appUser) {
         try {
 
-            Event e = new Event();
+            if (!appUser.getRoles().contains(Role.ROLE_ORGANISER)) {
+                throw new RuntimeException("You do not have permission to create an event.");
+            }
             if (eventRequest.getAvailableSeats() <= 0) {
                 throw new RuntimeException("Available seats must be greater than zero");
             }
-            BeanUtils.copyProperties(eventRequest, e);
-            e.setOrganizer(appUser);
-            return eventRepository.save(e);
 
-        } catch (UploadException ex) {
+            Event event = new Event();
 
-            throw new RuntimeException("Failed to create event due to upload issue: " + ex.getMessage(), ex);
+            BeanUtils.copyProperties(eventRequest, event);
 
+            event.setOrganizer(appUser);
+
+
+            return eventRepository.save(event);
         } catch (Exception ex) {
 
-            throw new RuntimeException("An unexpected error occurred while creating the event: " + ex.getMessage(), ex);
+            ex.printStackTrace();
+            throw new RuntimeException("An error occurred while creating the event: " + ex.getMessage(), ex);
         }
     }
+
+
+
 
 
     public Event updateEvent( Long id,@Valid EventRequest eventRequest) {

@@ -28,7 +28,7 @@ public class AuthRunner implements ApplicationRunner {
 
         // Creazione dell'utente event organiser se non esiste
 
-        Optional<AppUser> eventOrganiserUser = appUserService.findByUsername("eventOrganiser");
+        Optional<AppUser> eventOrganiserUser = appUserService.findByUsername("organiser");
         if (eventOrganiserUser.isEmpty()) {
             appUserService.registerUser("eventOrganiser", "eventOrganiserpwd", Set.of(Role.ROLE_ORGANISER));
         }

@@ -29,6 +29,7 @@ public class AppUserService {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
+
     public AppUser registerUser(String username, String password, Set<Role> roles) {
         if (appUserRepository.existsByUsername(username)) {
             throw new EntityExistsException("Username già in uso");
@@ -41,6 +42,7 @@ public class AppUserService {
 
         return appUserRepository.save(appUser);
     }
+
 
     public Optional<AppUser> findByUsername(String username) {
         return appUserRepository.findByUsername(username);

@@ -1,11 +1,11 @@
 package it.epicode.U2J_W4_D5_PROJECT.event;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import it.epicode.U2J_W4_D5_PROJECT.auth.AppUser;
+import it.epicode.U2J_W4_D5_PROJECT.auth.Role;
 import it.epicode.U2J_W4_D5_PROJECT.reservation.Reservation;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.Column;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -14,18 +14,17 @@ import java.util.Set;
 @Data
 public class EventRequest {
     @FutureOrPresent
-    @NotNull
-    private LocalDate date;
-    @NotBlank
+    @NotNull(message = "the field 'date' cannot be null")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+
+    private LocalDate eventDate;
+    @NotBlank (message = "the field 'location' cannot be blank")
     private String location;
-    @NotBlank
-    private String eventName;
-    @NotBlank
+    @NotBlank (message = "the field 'eventname' cannot be blank")
+    private String title;
+    @NotBlank (message = "the field 'description' cannot be blank")
     private String description;
-    @NotNull
+    @NotNull (message = "the field 'availableSeats' cannot be null")
     private int availableSeats;
-    @NotBlank
-    private AppUser organizer;
-    @Min(1)
-    private Set<Reservation> reservations;
+
 }

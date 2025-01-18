@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
     List<Reservation> findByUser(AppUser user);
     List<Reservation> findByEvent(Event event);
-    public Optional<Reservation> findByUserAndEvent(AppUser user, Event event);    void deleteByEvent(Event event);
+    Optional<Reservation> findByUserAndEvent(AppUser user, Event event);
+    boolean existsByUserAndEvent(AppUser user, Event event);
+    void deleteByEvent(Event event);
 
 }

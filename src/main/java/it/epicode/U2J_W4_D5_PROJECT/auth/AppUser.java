@@ -4,13 +4,19 @@ import it.epicode.U2J_W4_D5_PROJECT.event.Event;
 import it.epicode.U2J_W4_D5_PROJECT.reservation.Reservation;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
 @Data
-public class AppUser {
+public class AppUser implements UserDetails {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,10 +32,32 @@ public class AppUser {
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
-    @OneToMany(mappedBy = "organizer")
-    private Set<Event> events;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .collect(Collectors.toList());
+    }
 
-    @OneToMany(mappedBy = "user")
-    private Set<Reservation> reservations;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // Puoi personalizzarlo se necessario
+    }
 
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // Puoi personalizzarlo se necessario
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // Puoi personalizzarlo se necessario
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // Puoi personalizzarlo se necessario
+    }
 }
+
+

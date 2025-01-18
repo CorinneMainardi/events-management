@@ -2,17 +2,24 @@ package it.epicode.U2J_W4_D5_PROJECT.reservation;
 
 import it.epicode.U2J_W4_D5_PROJECT.auth.AppUser;
 import it.epicode.U2J_W4_D5_PROJECT.auth.AppUserRepository;
+import it.epicode.U2J_W4_D5_PROJECT.auth.Role;
 import it.epicode.U2J_W4_D5_PROJECT.event.Event;
 import it.epicode.U2J_W4_D5_PROJECT.event.EventRepository;
 import it.epicode.U2J_W4_D5_PROJECT.exceptions.ReservationException;
+import it.epicode.U2J_W4_D5_PROJECT.exceptions.UploadException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
 @Service
+@Validated
 public class ReservationSvc {
     @Autowired
     private ReservationRepository reservationRepository;
@@ -23,12 +30,12 @@ public class ReservationSvc {
     @Autowired
     private AppUserRepository userRepository;
 
-    public List<Reservation> getAllReservation(){
+    public List<Reservation> findAllReservation(){
         return reservationRepository.findAll();
     }
 
 
-    public Reservation getReservationById(Long id){
+    public Reservation findReservationById(Long id){
         if(!reservationRepository.existsById(id)){
             throw new EntityNotFoundException("Reservation not found");
         }
@@ -36,28 +43,68 @@ public class ReservationSvc {
     }
 
     @Transactional
-    public Reservation reserveSeat(Long userId, Long eventId) {
+    public Reservation reserveSeat(@Valid ReservationRequest reservationRequest, @AuthenticationPrincipal AppUser appUser) {
         try {
 
-            AppUser user = userRepository.findById(userId)
-                    .orElseThrow(() -> new EntityNotFoundException("User with ID " + userId + " not found"));
-
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new EntityNotFoundException("Event with ID " + eventId + " not found"));
-
-            if (event.getAvailableSeats() <= 0) {
-                throw new ReservationException("No available seats for event ID " + eventId);
+            if (!appUser.getRoles().contains(Role.ROLE_USER)) {
+                throw new RuntimeException("You do not have permission to create an event.");
             }
 
-            Reservation reservation = new Reservation();
-            reservation.setUser(user);
-            reservation.setEvent(event);
-            event.setAvailableSeats(event.getAvailableSeats() - 1);
+        AppUser user = reservationRequest.getUser();
+        Event event = reservationRequest.getEvent();
 
-            eventRepository.save(event);
-            return reservationRepository.save(reservation);
+        if (user == null) {
+            throw new EntityNotFoundException("User not found for id " + reservationRequest.getUser().getId());
+        }
+        if (event == null) {
+            throw new EntityNotFoundException("Event not found for id " + reservationRequest.getEvent().getId());
+        }
+
+        boolean reservationExists = reservationRepository.existsByUserAndEvent(user, event);
+        if (reservationExists) {
+            throw new RuntimeException("User already has a reservation for this event");
+        }
+
+        if (event.getAvailableSeats() <= 0) {
+            throw new ReservationException("No available seats for event ID " + event.getId());
+        }
+
+        Reservation reservation = new Reservation();
+        reservation.setUser(user);
+        reservation.setEvent(event);
+
+        event.setAvailableSeats(event.getAvailableSeats() - 1);
+        eventRepository.save(event);
+
+        return reservationRepository.save(reservation);
+    }catch (Exception ex) {
+
+            ex.printStackTrace();
+            throw new RuntimeException("An error occurred while creating the event: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Transactional
+    public Reservation updateReservation(Long id, @Valid ReservationRequest reservationRequest) {
+        try {
+            Reservation existingReservation = findReservationById(id);
+
+
+            if (reservationRequest.getUser() != null) {
+                existingReservation.setUser(reservationRequest.getUser());
+            }
+
+            if (reservationRequest.getEvent() != null) {
+                existingReservation.setEvent(reservationRequest.getEvent());
+            }
+
+            return reservationRepository.save(existingReservation);
+
+        } catch (EntityNotFoundException ex) {
+            throw new RuntimeException("Failed to update reservation: Reservation not found. " + ex.getMessage(), ex);
+
         } catch (Exception ex) {
-            throw new RuntimeException("An unexpected error occurred while creating the reservation: " + ex.getMessage(), ex);
+            throw new RuntimeException("An unexpected error occurred while updating the reservation: " + ex.getMessage(), ex);
         }
     }
 
@@ -65,6 +112,7 @@ public class ReservationSvc {
         AppUser user = userRepository.findById(userId).orElseThrow(() -> new ReservationException("User not found"));
         return reservationRepository.findByUser(user);
     }
+
 @Transactional
     public void deleteReservation(Long userId, Long eventId) {
         try {
