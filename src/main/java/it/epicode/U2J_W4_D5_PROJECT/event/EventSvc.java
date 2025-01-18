@@ -3,12 +3,15 @@ package it.epicode.U2J_W4_D5_PROJECT.event;
 
 import it.epicode.U2J_W4_D5_PROJECT.auth.AppUser;
 import it.epicode.U2J_W4_D5_PROJECT.auth.Role;
+import it.epicode.U2J_W4_D5_PROJECT.exceptions.InternalServerErrorException;
+import it.epicode.U2J_W4_D5_PROJECT.exceptions.ReservationException;
 import it.epicode.U2J_W4_D5_PROJECT.exceptions.UploadException;
 import it.epicode.U2J_W4_D5_PROJECT.reservation.ReservationRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,10 +43,10 @@ public class EventSvc {
         try {
 
             if (!appUser.getRoles().contains(Role.ROLE_ORGANISER)) {
-                throw new RuntimeException("You do not have permission to create an event.");
+                throw new AccessDeniedException("You do not have permission to create an event.");
             }
             if (eventRequest.getAvailableSeats() <= 0) {
-                throw new RuntimeException("Available seats must be greater than zero");
+                throw new ReservationException("Available seats must be greater than zero");
             }
 
             Event event = new Event();
@@ -57,7 +60,7 @@ public class EventSvc {
         } catch (Exception ex) {
 
             ex.printStackTrace();
-            throw new RuntimeException("An error occurred while creating the event: " + ex.getMessage(), ex);
+            throw new InternalServerErrorException("An error occurred while creating the event: " + ex.getMessage());
         }
     }
 
@@ -74,24 +77,24 @@ public class EventSvc {
 
 
             } else {
-                throw new RuntimeException("Event with id number"+ id + "not found");
+                throw new EntityNotFoundException("Event with id number"+ id + "not found");
             }
 
 
             return eventRepository.save(e);
 
         } catch (UploadException ex) {
-            throw new RuntimeException("Failed to update event due to upload issue: " + ex.getMessage(), ex);
+            throw new IllegalArgumentException ("Failed to update event due to upload issue: " + ex.getMessage(), ex);
 
         } catch (Exception ex) {
-            throw new RuntimeException("An unexpected error occurred while updating the event: " + ex.getMessage(), ex);
+            throw new InternalServerErrorException("An unexpected error occurred while updating the event: " + ex.getMessage());
         }
     }
 
     @Transactional
     public Event deleteEvent(Long eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Event not found"));
         reservationRepository.deleteByEvent(event);
 
         eventRepository.delete(event);

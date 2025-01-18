@@ -10,7 +10,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -43,11 +45,11 @@ public class EventController {
     @PreAuthorize(" hasRole('ROLE_ORGANISER')")
     public ResponseEntity<Event> createEvent(@RequestBody EventRequest eventRequest, @AuthenticationPrincipal AppUser appUser) {
         if (appUser == null) {
-            throw new RuntimeException("User is not authenticated");
+            throw new AuthenticationCredentialsNotFoundException("User is not authenticated");
         }
 
         if (!appUser.getRoles().contains(Role.ROLE_ORGANISER)) {
-            throw new RuntimeException("Only event organizers can create events");
+            throw new AccessDeniedException("You do not have permission to create an event.");
         }
 
 

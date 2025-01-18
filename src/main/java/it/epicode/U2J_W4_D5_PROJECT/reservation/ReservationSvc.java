@@ -5,12 +5,17 @@ import it.epicode.U2J_W4_D5_PROJECT.auth.AppUserRepository;
 import it.epicode.U2J_W4_D5_PROJECT.auth.Role;
 import it.epicode.U2J_W4_D5_PROJECT.event.Event;
 import it.epicode.U2J_W4_D5_PROJECT.event.EventRepository;
+import it.epicode.U2J_W4_D5_PROJECT.exceptions.AlreadyExistsException;
+import it.epicode.U2J_W4_D5_PROJECT.exceptions.InternalServerErrorException;
 import it.epicode.U2J_W4_D5_PROJECT.exceptions.ReservationException;
 import it.epicode.U2J_W4_D5_PROJECT.exceptions.UploadException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +55,7 @@ public class ReservationSvc {
         try {
 
             if (!appUser.getRoles().contains(Role.ROLE_USER)) {
-                throw new RuntimeException("You do not have permission to reserve a seat.");
+                throw new AccessDeniedException("You do not have permission to reserve a seat.");
             }
 
             AppUser user = userRepository.findById(reservationRequest.getUserId())
@@ -61,7 +66,7 @@ public class ReservationSvc {
 
             boolean reservationExists = reservationRepository.existsByUserAndEvent(user, event);
             if (reservationExists) {
-                throw new RuntimeException("User already has a reservation for this event");
+                throw new AlreadyExistsException("User already has a reservation for this event");
             }
 
 
@@ -78,16 +83,18 @@ public class ReservationSvc {
             eventRepository.save(event);
 
             return reservationRepository.save(reservation);
+
+
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new RuntimeException("An error occurred while creating the reservation: " + ex.getMessage(), ex);
+            throw new InternalServerErrorException("An error occurred while creating the reservation: " + ex.getMessage());
         }
     }
 
 
 
 @Transactional
-    public void deleteReservation(Long userId, Long eventId) {
+    public Reservation deleteReservation(Long userId, Long eventId) {
         try {
 
             AppUser user = userRepository.findById(userId).orElseThrow(() -> new ReservationException("User not found"));
@@ -102,10 +109,10 @@ public class ReservationSvc {
             event.setAvailableSeats(event.getAvailableSeats() + 1);
 
             eventRepository.save(event);
-
+            return reservation;
         } catch (Exception ex) {
 
-            throw new RuntimeException("An unexpected error occurred while deleting the reservation: " + ex.getMessage(), ex);
+            throw new InternalServerErrorException("An unexpected error occurred while deleting the reservation: " + ex.getMessage());
         }
     }
 

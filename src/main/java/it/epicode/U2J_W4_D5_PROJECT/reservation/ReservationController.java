@@ -49,15 +49,9 @@ public class ReservationController {
     }
 
 
-
-
-
-
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Reservation> deleteReservation(@PathVariable Long userId, Long eventId, @AuthenticationPrincipal AppUser appUser){
-        reservationSvc.deleteReservation(userId, eventId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok( reservationSvc.deleteReservation(userId, eventId));
     }
 }
 
