@@ -70,18 +70,12 @@ public class EventSvc {
 
     public Event updateEvent( Long id,@Valid EventRequest eventRequest) {
         try {
-            Event e = getEventById(id);
-            if (eventRepository.findById(id).isPresent()) {
+            Event event = eventRepository.findById(id).orElseThrow(() ->
+                    new EntityNotFoundException("Event with id number " + id + " not found")
+            );
+            BeanUtils.copyProperties(eventRequest, event);
 
-                BeanUtils.copyProperties(eventRequest,e);
-
-
-            } else {
-                throw new EntityNotFoundException("Event with id number"+ id + "not found");
-            }
-
-
-            return eventRepository.save(e);
+            return eventRepository.save(event);
 
         } catch (UploadException ex) {
             throw new IllegalArgumentException ("Failed to update event due to upload issue: " + ex.getMessage(), ex);
@@ -90,6 +84,8 @@ public class EventSvc {
             throw new InternalServerErrorException("An unexpected error occurred while updating the event: " + ex.getMessage());
         }
     }
+
+
 
     @Transactional
     public Event deleteEvent(Long eventId) {
